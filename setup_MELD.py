@@ -31,7 +31,7 @@ def gen_state_templates(index, templates):
     c._box_vectors=np.array([0.,0.,0.])
     vel = np.zeros_like(pos)
     alpha = index / (N_REPLICAS - 1.0)
-    energy = 0 
+    energy = 0
     return system.SystemState(pos, vel, alpha, energy,c._box_vectors)
     
 # Restraints on Protein CA

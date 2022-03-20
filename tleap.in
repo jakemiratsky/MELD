@@ -1,0 +1,5 @@
+set default PBradii mbondi3
+source leaprc.protein.ff14SB 
+mol = loadpdb <"INSERT PDB FILE HERE">
+saveamberparm mol system.top system.mdcrd
+quit

@@ -1,5 +1,5 @@
-set default PBradii mbondi3
-source leaprc.protein.ff14SB 
-mol = loadpdb <"INSERT PDB FILE HERE">
-saveamberparm mol system.top system.mdcrd
+set default PBradii mbondi3 # For specifying the force field 
+source leaprc.protein.ff14SB # We plan to use the ff14SB forcefield which is found in this leaprc file
+mol = loadpdb <"INSERT PDB FILE HERE"> 
+saveamberparm mol system.top system.mdcrd # Saving your topology and trajectory file
 quit

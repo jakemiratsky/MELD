@@ -27,6 +27,9 @@ This will produce the necessary parameter files from use in the setup_MELD.py sc
 ## 3. Run REMD
 
 Once the correct restraints have been set up for your system, all that is left is to begin the replica exchange (See the job.sh script).
+```
+sbatch job.sh
+```
 
 ## 4. Analysis
 

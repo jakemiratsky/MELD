@@ -3,12 +3,12 @@ Model Employing Limited Data
 ## 1. Downloading MELD
 
 MELD is a plugin from OpenMM, a high performance toolkit for molecular simulations, and can be downloaded using the following steps: 
-'''
+```
 module load anaconda/py3 
 conda create -n MELD 
 source activate MELD
 conda install -c conda-forge openmm openmpi meld
-'''
+```
 This should ensure that the MELD environment has been created on your system. To test the functionality use: 
 
 *(meld) python -m simtk.testInstallation

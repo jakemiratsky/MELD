@@ -12,8 +12,8 @@ from collections import namedtuple
 import glob as glob
 import os
 
-N_REPLICAS = 16
-N_STEPS = 5000
+N_REPLICAS = 4
+N_STEPS = 1000
 BLOCK_SIZE = 100
 
 

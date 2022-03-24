@@ -75,7 +75,7 @@ def get_dist_restraints(filename, s, scaler):             # to read the binding 
                                               atom_1_res_index=i, atom_2_res_index=j,
                                               atom_1_name=name_i, atom_2_name=name_j)
             rest_group.append(rest)
-return dists
+    return dists
 
 
 def get_dist_restraints_protein(filename, s, scaler):                   #To read the restraint to keep protein conformation fixed
@@ -100,7 +100,7 @@ def get_dist_restraints_protein(filename, s, scaler):                   #To read
                                               atom_1_res_index=i, atom_2_res_index=j,
                                               atom_1_name=name_i, atom_2_name=name_j)
             rest_group.append(rest)
-return dists
+    return dists
 
 def setup_system():
     #print "!!!Starting from Templates!!!"

@@ -3,6 +3,7 @@ Model Employing Limited Data
 ## 1. Downloading MELD
 
 MELD is a plugin from OpenMM, a high performance toolkit for molecular simulations, and can be downloaded using the following steps: 
+HOWEVER... be sure that you are in line with your machine whether that is on a cluster or your local setup, specifically make sure the cuda-tool-kit is compatible. 
 ```
 module load anaconda/py3 
 conda create -n MELD 

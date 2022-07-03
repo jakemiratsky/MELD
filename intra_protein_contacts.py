@@ -2,12 +2,18 @@ import mdtraj as md
 from matplotlib import pyplot as plt
 import sys
 import numpy as np
-
+from itertools import chain
 traj=md.load_pdb('native_free.pdb')
+protein = []
+A = range(0,10)
+B = range(20,30)
+m1 = chain(A,B)
+for i in m1:
+    protein.append(i)
 pair=[]
-for i in range(68):
-    for j in range(i+4,68):
-        pair.append([i,j])
+for i in range(len(protein)):
+    for j in range(i+1, len(protein)):
+        pair.append([protein[i], protein[j]])
 
 dist = md.compute_contacts(traj, pair, scheme='CA')
 print(len(dist[1]))

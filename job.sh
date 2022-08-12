@@ -3,7 +3,7 @@
 #SBATCH -p asinghargpu1
 #SBATCH -q wildfire 
 #SBATCH --gres=gpu:1
-#SBATCH -n 16
+#SBATCH -n 16 #This will only assign one core per task... may need to use c...
 #SBATCH -o meld.log
 
 # Other parameters for slurm may be added 

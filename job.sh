@@ -1,8 +1,9 @@
 #!/bin/bash 
-#SBATCH -p gpu
+#SBATCH -N 16
+#SBATCH -p asinghargpu1
 #SBATCH -q wildfire 
-#SBATCH --gres=gpu:4
-#SBATCH -n 4
+#SBATCH --gres=gpu:1
+#SBATCH -n 16
 #SBATCH -o meld.log
 
 # Other parameters for slurm may be added 

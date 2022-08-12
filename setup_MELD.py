@@ -12,8 +12,8 @@ from collections import namedtuple
 import glob as glob
 import os
 
-N_REPLICAS = 4
-N_STEPS = 1000
+N_REPLICAS = 16
+N_STEPS = 2000
 BLOCK_SIZE = 100
 
 
@@ -110,7 +110,7 @@ def setup_system():
     p = system.ProteinMoleculeFromPdbFile(templates[0])
     b = system.SystemBuilder(forcefield="ff14sbside")
     s = b.build_system_from_molecules([p])
-    s.temperature_scaler = system.GeometricTemperatureScaler(0, 0.4, 300, 350.)
+    s.temperature_scaler = system.GeometricTemperatureScaler(0, 0.4, 300, 380.)
     n_res = s.residue_numbers[-1]
 
     

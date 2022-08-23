@@ -1,7 +1,7 @@
 #!/bin/bash 
 #SBATCH -N 16
 #SBATCH -p asinghargpu1
-#SBATCH -q wildfire 
+#SBATCH -q asinghargpu1
 #SBATCH --gres=gpu:1
 #SBATCH -n 16 #This will only assign one core per task... may need to use c... try -c 8 next run
 #SBATCH -o meld.log

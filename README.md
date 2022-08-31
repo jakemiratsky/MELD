@@ -31,7 +31,6 @@ Once the correct restraints have been set up for your system, all that is left i
 ```
 sbatch job.sh
 ```
-
 ## 4. Analysis
 
 Once the job has completed, there are some further command line operations within MELD that we can run. First off, say that you wanted to determine if your replica exchange was sufficient, i.e. there was good exchange: 
@@ -43,3 +42,4 @@ Moreover, we can isolate one of the replicas from REMD by:
 ```
 (meld) extract_trajectory extract_traj_dcd --replica 0 traj0.dcd 
 ```
+protein 1-68 is indexed as range(68)

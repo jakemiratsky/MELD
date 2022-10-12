@@ -18,7 +18,7 @@
 #            }
 #bias_dict = {
 #    'Dist1': {'a1':w, 'a2':x, 'b1':y, 'b2':z},
-    'Cart1': {'a1':'a', 'a2':'b'}
+#    'Cart1': {'a1':'a', 'a2':'b'}
 #            } #For 1 distance group, set 'b1':0
 #if __name__=="__main__":
 #   from meld_setup import *

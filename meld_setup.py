@@ -13,21 +13,20 @@
 #       Creation Date : 30-09-2022
 
 #       Usage : In main.py... 
-#meld_dict = { 
-#     'reps':'4', 'steps':'5000', 'pdb':'.pdb', 'psf':'.psf', 'output':'.log'
-#            }
 #bias_dict = {
 #    'Dist1': {'a1':w, 'a2':x, 'b1':y, 'b2':z},
-    'Cart1': {'a1':'a', 'a2':'b'}
+#    'Cart1': {'a1':'a', 'a2':'b'}
 #            } #For 1 distance group, set 'b1':0
-#if __name__=="__main__":
-#   from meld_setup import *
-#   model = setup_scripts()
-#   setup() -> Generate input files
-#   Exec() -> Execute files 
+#meld_dict = {
+#        'reps':'4', 'steps':'5000', 'pdb':'.pdb', 
+#        'psf':'.psf', 'output':'meld.out'}
+#model = setup_scripts()
+#model.setup(meld_dict, bias_dict, dist_rest, cart_rest)
+#model.Exec('clean_model.pdb', dist_rest)
 #======================================================
 import os 
 import shutil
+import time
 def bash(bashCommand):
     import subprocess
     # print("\nBashCommand:\n%s\n" % (bashCommand))
@@ -66,7 +65,7 @@ def mv_files(file, dire, copy=False):
 class setup_scripts():
     def __init__(self):
         None
-    def setup(self):
+    def setup(self, meld_dict, bias_dict, dist_rest=None, cart_rest=None):
         if os.path.exists('TEMPLATES'):
             os.rmdir('TEMPLATES')
             os.mkdir('TEMPLATES')
@@ -74,7 +73,7 @@ class setup_scripts():
             os.mkdir('TEMPLATES')
         file=open('setup_MELD.py', 'w')
         file.write(
-'''#!/usr/bin/env python
+f'''#!/usr/bin/env python
 # encoding: utf-8
 
 import numpy as np
@@ -87,13 +86,12 @@ from meld.system.restraints import LinearRamp,ConstantRamp
 from collections import namedtuple
 import glob as glob
 import os
-from main import meld_dict 
 
-N_REPLICAS = meld_dict['reps']
-N_STEPS = meld_dict['steps']
+N_REPLICAS = {meld_dict['reps']}
+N_STEPS = {meld_dict['steps']}
 BLOCK_SIZE = 500
 
-def gen_state_templates(index, templates):                                                                                                                                                                              
+def gen_state_templates(index, templates):                                      
     n_templates = len(templates)
     print((index,n_templates,index%n_templates))
     a = system.ProteinMoleculeFromPdbFile(templates[index%n_templates])
@@ -150,7 +148,7 @@ def setup_system():
     p = system.ProteinMoleculeFromPdbFile(templates[0])
     b = system.SystemBuilder(forcefield="ff14sbside")
     s = b.build_system_from_molecules([p])
-    s.temperature_scaler = system.GeometricTemperatureScaler(0, 0.4, 300, 300+meld_dict['reps']*5.)
+    s.temperature_scaler = system.GeometricTemperatureScaler(0, 1.0, 300, 300+{meld_dict['reps']}*10.)
     n_res = s.residue_numbers[-1]
 
     
@@ -159,28 +157,24 @@ def setup_system():
 
 ''') 
         file.close()
-        num_rest = int(input('How many restraints/constraints are being imposed?: '))
-        dist_rest = int(input('How many are distance constraints?: '))
-        cart_rest = int(input('How many are cartesian restraints?: '))
-        for i in range(1, num_rest+1):
+        for i in range(1, dist_rest+1):
             file=open('bias%s.py' % i, 'w')
             file.write(
-'''import mdtraj as md
+f'''import mdtraj as md
 import sys
 import numpy as np
 from itertools import chain
-from main import bias_dict
 
 traj=md.load_pdb('TEMPLATES/clean_model.pdb')
-if(bias_dict['Dist%s']['b1'] == 0):
+if({bias_dict['Dist%s'%i]['b1']} == 0):
     complex = []
-    a = range(bias_dict['Dist%s']['a1']-1,bias_dict['Dist%s']['a2'])
+    a = range({bias_dict['Dist%s'%i]['a1']}-1,{bias_dict['Dist%s'%i]['a2']})
     for i in a:
         complex.append(i)
 else:   
     complex = []
-    a = range(bias_dict['Dist%s']['a1']-1,bias_dict['Dist%s']['a2'])
-    b = range(bias_dict['Dist%s']['b1']-1,bias_dict['Dist%s']['b2'])
+    a = range({bias_dict['Dist%s'%i]['a1']}-1,{bias_dict['Dist%s'%i]['a2']})
+    b = range({bias_dict['Dist%s'%i]['b1']}-1,{bias_dict['Dist%s'%i]['b2']})
     m = chain(a,b)
     for i in m:
         complex.append(i)
@@ -200,11 +194,11 @@ accpt=[]
 for i in zip(pair, dist_list):
     j  = [val for sublist in i for val in sublist]
     
-    if 0 < j[2] <= 10:
+    if 0 < j[2] <= {bias_dict['Dist%s'%i]['distance']}:
         accpt.append([j[0],j[1],j[2]])
-        file.write( "{} CA {} CA {}\\n".format(j[0]+1, j[1]+1,float(j[2])))
+        file.write( "{{}} CA {{}} CA {{}}\\n".format(j[0]+1, j[1]+1,float(j[2])))
         file.write("\\n")
-''' % (i, i, i, i, i, i, i, i))
+''' % i)
             file.close()
         if dist_rest == 0:
             None 
@@ -212,10 +206,10 @@ for i in zip(pair, dist_list):
             for i in range(1, dist_rest+1):
                 file=open('setup_MELD.py', 'a')
                 file.write(
-'''
+f'''
     distance_restraints_%s = get_dist_restraints('bias%s.dat',s,scaler=const_scaler) 
-    s.restraints.add_selectively_active_collection(distance_restraints_%s, int(len(distance_restraints_%s)*bias['Dist%s']['confidence']))
-''' % (i, i, i, i, i))
+    s.restraints.add_selectively_active_collection(distance_restraints_%s, int(len(distance_restraints_%s)*{bias_dict['Dist%s'%i]['confidence']}))
+''' % (i, i, i, i))
                 file.close()
         if cart_rest == 0:
             None
@@ -223,16 +217,16 @@ for i in zip(pair, dist_list):
             for i in range(1, cart_rest+1):
                 file=open('setup_MELD.py', 'a')
                 file.write(
-'''
-    cartesian_restraints_%s = list(range(bias_dict['Cart%s]['a1'],bias_dict['Cart%s']['a2']))
+f'''
+    cartesian_restraints_%s = list(range({bias_dict['Cart%s'%i]['a1']},{bias_dict['Cart%s'%i]['a2']}))
     cart_%s = get_cartesian_restraints(s, const_scaler, cartesian_restraints_%s)
     s.restraints.add_as_always_active_list(cart_%s)
-''' % (i, i, i, i, i, i))
+''' % (i, i, i, i))
                 file.close()
         file=open('setup_MELD.py', 'a')
         file.write(
-'''
-    create the options
+f'''
+   #create the options
     options = system.RunOptions()
     options.implicit_solvent_model = 'gbNeck2'
     options.use_big_timestep = False
@@ -284,7 +278,7 @@ setup_system()''')
         file.close()
         file=open('tleap.in', 'w')
         file.write(
-'''set default PBradii mbondi3
+f'''set default PBradii mbondi3
 source leaprc.protein.ff14SB
 source leaprc.DNA.bsc1
 source leaprc.RNA.OL3
@@ -295,7 +289,7 @@ quit
         file.close()
         file=open('AMBER.sh', 'w')
         file.write(
-'''#!/bin/bash
+f'''#!/bin/bash
 #SBATCH -p asinghargpu1
 #SBATCH -q asinghargpu1
 #SBATCH -N 1
@@ -303,11 +297,10 @@ quit
 #SBATCH -n 2
 #SBATCH -o AMBER.out
 
-from main import md_dict
 module purge
 module load anaconda/py3
 source activate ambertools
-pdb4amber -i ../meld_dict['pdb'] -y -o clean_model.pdb
+pdb4amber -i ../{meld_dict['pdb']} -y -o clean_model.pdb
 echo Cleaning model for AMBER
 tleap -f tleap.in
 ''')
@@ -315,16 +308,16 @@ tleap -f tleap.in
         mv_files(['AMBER.sh', 'tleap.in'], 'AMBER')
         file=open('meld.sh', 'w')
         file.write(
-'''#!/bin/bash
+f'''#!/bin/bash
 #SBATCH -p asinghargpu1
 #SBATCH -q asinghargpu1
-#SBATCH -N meld_dict['reps']
-#SBATCH -t 4-00:00:00
-#SBATCH -n 8
+#SBATCH -N {meld_dict['reps']}
+#SBATCH -t 01:00:00
+#SBATCH -c 8
 #SBATCH --gres=gpu:1
-#SBATCH -o meld_dict['output']
+#SBATCH -o {meld_dict['output']}
 
-from main import meld_dict
+module purge
 module load anaconda/py3
 source activate meld
 python setup_MELD.py
@@ -332,9 +325,9 @@ mpirun launch_remd
 ''' )
         file.close()
         file=open('Bias.sh', 'w')
-#Need to move .pdb into TEMPLATES before moving (clean_model.pdb)
+        num_rest = dist_rest + cart_rest
         file.write(
-'''#!/bin/bash
+f'''#!/bin/bash
 #SBATCH -p asinghargpu1
 #SBATCH -q asinghargpu1
 #SBATCH -N 1
@@ -345,25 +338,31 @@ mpirun launch_remd
 
 module load anaconda/py3
 source activate mdtraj
-from main import bias_dict
 
-for i in %d; do
+for i in {{1..%d}}; do
     for f in bias"$i".py; do python3 "$f"; done
     done
 exit 
 ''' % num_rest)
         file.close()
-    def Exec(self):
-        pid = os.fork()
-        if pid:
-            status = os.wait()
+    def Exec(self, file_path, num_bias):
+        os.chdir('AMBER')
+        bash('sbatch AMBER.sh')
+        while not os.path.exists(file_path):
+            time.sleep(5)
+        if os.path.isfile(file_path):
             os.chdir('../')
             shutil.move('AMBER/clean_model.pdb', 'TEMPLATES/clean_model.pdb')
             bash('sbatch Bias.sh')
         else:
-            os.chdir('AMBER')
-            bash('sbatch AMBER.sh')
-            
+            raise ValueError('%s is not a file!'%file_path)
+
+        while not os.path.exists('bias%d.dat'%num_bias):
+            time.sleep(1)
+        if os.path.isfile('bias%d.dat'%num_bias):
+            bash('sbatch meld.sh')
+        else:
+            raise ValueError('bias%d.dat is not a file!'%num_bias)
 
 
 

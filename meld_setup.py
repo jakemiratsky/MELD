@@ -13,16 +13,49 @@
 #       Creation Date : 30-09-2022
 
 #       Usage : In main.py... 
+#from meld_setup import *
 #bias_dict = {
-#    'Dist1': {'a1':w, 'a2':x, 'b1':y, 'b2':z},
-#    'Cart1': {'a1':'a', 'a2':'b'}
-#            } #For 1 distance group, set 'b1':0
+#    'Dist1': {'a1':'1', 'a2':'1', 'b1':'1', 'b2':'1', 
+#              'distance':'4', 'confidence':'1.00'}, 
+#    'Cart1': {'a1':'1', 'a2':'1', 'delta':'1'} 
+#            }
+#
+#For 1 distance group, set 'b1':0
+#Dist1 distance in A
+#Cart1 delta in A
+#
 #meld_dict = {
 #        'reps':'4', 'steps':'5000', 'pdb':'.pdb', 
 #        'psf':'.psf', 'output':'meld.out'}
+#
 #model = setup_scripts()
+#
 #model.setup(meld_dict, bias_dict, dist_rest, cart_rest)
 #model.Exec('clean_model.pdb', dist_rest)
+#
+#model.setup(meld_dict, bias_dict, dist_rest, cart_rest)
+#model.Exec('clean_model.pdb', dist_rest)
+#
+#
+#                    ADVANDED USE 
+#
+#from meld_setup import *
+#k = ['.90', '.80', '.70', '.60', '.50']
+#for i in k:
+#   bias_dict = {
+#    'Dist1': {'a1':'1', 'a2':'1', 'b1':'1', 'b2':'1', 
+#              'distance':'4', 'confidence':i}, 
+#    'Cart1': {'a1':'1', 'a2':'1', 'delta':'1'} 
+#            }
+#   meld_dict = {
+#        'reps':'4', 'steps':'5000', 'pdb':'.pdb', 
+#        'psf':'.psf', 'output':'meld.out'}
+#    os.mkdir('sim_%sconfidence'%i)
+#    shutil.copy(f'meld_dict["pdb"]', f'Simulation/meld_dict["pdb"]')
+#    os.chdir('sim_%sconfidence'%i)
+#    model = setup_scripts()
+#    model.setup(meld_dict, bias_dict, dist_rest, cart_rest)
+#    model.Exec('clean_model.pdb', 3)
 #======================================================
 import os 
 import shutil
@@ -40,6 +73,13 @@ def bash(bashCommand):
             print(line)
     print("StandardOutput:\n%s\nError:%s\n" % (output, error))
     return output, error
+def new_dir(dire):
+    if os.path.exists(dire):
+        print('%s exists... recreating now...'%dire)
+        shutil.rmtree(dire)
+        os.makedirs(dire)
+    else:
+        os.makedirs(dire)
 def mv_files(file, dire, copy=False):
     files = [f for f in file]
     if os.path.exists(dire):
@@ -65,7 +105,11 @@ def mv_files(file, dire, copy=False):
 class setup_scripts():
     def __init__(self):
         None
-    def setup(self, meld_dict, bias_dict, dist_rest=None, cart_rest=None):
+    def setup(self, meld_dict, bias_dict, dist_rest=None, cart_rest=None, multi_job=False):
+        new_dir('Simulation')
+        shutil.copy(f'{meld_dict["pdb"]}', f'Simulation/{meld_dict["pdb"]}')
+        os.chdir('Simulation')
+        temp_fin = float(float(meld_dict['reps']) * 10 + 300)
         if os.path.exists('TEMPLATES'):
             os.rmdir('TEMPLATES')
             os.mkdir('TEMPLATES')
@@ -104,7 +148,7 @@ def gen_state_templates(index, templates):
     energy = 0
     return system.SystemState(pos, vel, alpha, energy,c._box_vectors)
 
-def get_cartesian_restraints(s, scaler, residues, delta=.1, k = 250.):
+def get_cartesian_restraints(s, scaler, residues, delta=None, k = 250.):
     cart = []
     backbone = ['CA']
     for i in residues:
@@ -148,7 +192,7 @@ def setup_system():
     p = system.ProteinMoleculeFromPdbFile(templates[0])
     b = system.SystemBuilder(forcefield="ff14sbside")
     s = b.build_system_from_molecules([p])
-    s.temperature_scaler = system.GeometricTemperatureScaler(0, 1.0, 300, 300+{meld_dict['reps']}*10.)
+    s.temperature_scaler = system.GeometricTemperatureScaler(0, 1.0, 300, {temp_fin})
     n_res = s.residue_numbers[-1]
 
     
@@ -194,7 +238,7 @@ accpt=[]
 for i in zip(pair, dist_list):
     j  = [val for sublist in i for val in sublist]
     
-    if 0 < j[2] <= {bias_dict['Dist%s'%i]['distance']}:
+    if 0 < j[2] <= {bias_dict['Dist%s'%i]['distance']}/10:
         accpt.append([j[0],j[1],j[2]])
         file.write( "{{}} CA {{}} CA {{}}\\n".format(j[0]+1, j[1]+1,float(j[2])))
         file.write("\\n")
@@ -219,7 +263,7 @@ f'''
                 file.write(
 f'''
     cartesian_restraints_%s = list(range({bias_dict['Cart%s'%i]['a1']},{bias_dict['Cart%s'%i]['a2']}))
-    cart_%s = get_cartesian_restraints(s, const_scaler, cartesian_restraints_%s)
+    cart_%s = get_cartesian_restraints(s, const_scaler, cartesian_restraints_%s, delta={bias_dict['Cart%s'%i]['delta']}/10)
     s.restraints.add_as_always_active_list(cart_%s)
 ''' % (i, i, i, i))
                 file.close()
@@ -306,13 +350,14 @@ tleap -f tleap.in
 ''')
         file.close()
         mv_files(['AMBER.sh', 'tleap.in'], 'AMBER')
-        file=open('meld.sh', 'w')
-        file.write(
+        if multi_job == False:
+            file=open('meld.sh', 'w')
+            file.write(
 f'''#!/bin/bash
 #SBATCH -p asinghargpu1
 #SBATCH -q asinghargpu1
 #SBATCH -N {meld_dict['reps']}
-#SBATCH -t 01:00:00
+#SBATCH -t 7-00:00:00
 #SBATCH -c 8
 #SBATCH --gres=gpu:1
 #SBATCH -o {meld_dict['output']}
@@ -323,7 +368,26 @@ source activate meld
 python setup_MELD.py
 mpirun launch_remd
 ''' )
-        file.close()
+            file.close()
+        elif multi_job == True:
+            file=open('meld.sh', 'w')
+            file.write(
+f'''#!/bin/bash
+#SBATCH -p gpu
+#SBATCH -q wildfire 
+#SBATCH -N {meld_dict['reps']}
+#SBATCH -t 7-00:00:00
+#SBATCH -c 8
+#SBATCH --gres=gpu:4
+#SBATCH -o {meld_dict['output']}
+
+module purge
+module load anaconda/py3
+source activate meld
+python setup_MELD.py
+mpirun launch_remd
+''' )
+            file.close()
         file=open('Bias.sh', 'w')
         num_rest = dist_rest + cart_rest
         file.write(
@@ -363,9 +427,4 @@ exit
             bash('sbatch meld.sh')
         else:
             raise ValueError('bias%d.dat is not a file!'%num_bias)
-
-
-
-
-
 

@@ -104,12 +104,12 @@ def mv_files(file, dire, copy=False):
                 print('No files were moved to %s...' % dire)
 class setup_scripts():
     def __init__(self):
-        None
+        pass
     def setup(self, meld_dict, bias_dict, dist_rest=None, cart_rest=None, multi_job=False):
         new_dir('Simulation')
         shutil.copy(f'{meld_dict["pdb"]}', f'Simulation/{meld_dict["pdb"]}')
         os.chdir('Simulation')
-        temp_fin = float(float(meld_dict['reps']) * 10 + 300)
+        temp_fin = float(float(meld_dict['reps']) * 5 + 300)
         if os.path.exists('TEMPLATES'):
             os.rmdir('TEMPLATES')
             os.mkdir('TEMPLATES')
@@ -227,7 +227,7 @@ for i in range(len(complex)):
     for j in range(i+1, len(complex)):
         pair.append([complex[i],complex[j]])
 
-dist = md.compute_contacts(traj, pair, scheme='CA')
+dist = md.compute_contacts(traj, pair, scheme="{bias_dict['Dist%s'%i]['selection']}")
 print(len(dist[1]))
 dis=np.reshape(dist[0],(len(dist[1]),1))
 
@@ -375,9 +375,9 @@ mpirun launch_remd
 f'''#!/bin/bash
 #SBATCH -p gpu
 #SBATCH -q wildfire 
-#SBATCH -N {meld_dict['reps']}
+#SBATCH -N 1
 #SBATCH -t 7-00:00:00
-#SBATCH -c 8
+#SBATCH -n 4
 #SBATCH --gres=gpu:4
 #SBATCH -o {meld_dict['output']}
 

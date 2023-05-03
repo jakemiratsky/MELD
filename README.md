@@ -8,7 +8,7 @@ HOWEVER... be sure that you are in line with your machine whether that is on a c
 module load anaconda/py3 
 conda create -n MELD 
 source activate MELD
-conda install -c conda-forge openmm openmpi meld
+conda install -c conda-forge openmm openmpi meld=0.5.0
 ```
 This should ensure that the MELD environment has been created on your system. To test the functionality use: 
 ```

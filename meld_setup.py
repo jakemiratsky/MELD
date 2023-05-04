@@ -37,25 +37,7 @@
 #model.Exec('clean_model.pdb', dist_rest)
 #
 #
-#                    ADVANDED USE 
-#
-#from meld_setup import *
-#k = ['.90', '.80', '.70', '.60', '.50']
-#for i in k:
-#   bias_dict = {
-#    'Dist1': {'a1':'1', 'a2':'1', 'b1':'1', 'b2':'1', 
-#              'distance':'4', 'confidence':i}, 
-#    'Cart1': {'a1':'1', 'a2':'1', 'delta':'1'} 
-#            }
-#   meld_dict = {
-#        'reps':'4', 'steps':'5000', 'pdb':'.pdb', 
-#        'psf':'.psf', 'output':'meld.out'}
-#    os.mkdir('sim_%sconfidence'%i)
-#    shutil.copy(f'meld_dict["pdb"]', f'Simulation/meld_dict["pdb"]')
-#    os.chdir('sim_%sconfidence'%i)
-#    model = setup_scripts()
-#    model.setup(meld_dict, bias_dict, dist_rest, cart_rest)
-#    model.Exec('clean_model.pdb', 3)
+#            
 #======================================================
 import os 
 import shutil
